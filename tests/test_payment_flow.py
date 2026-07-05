@@ -12,7 +12,7 @@ def signup(client, email: str, name: str = "Test User"):
 def test_root_serves_frontend(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert "Northstar Pay" in response.text
+    assert "Star Pay" in response.text
 
 
 def test_signup_login_and_wallet(client):

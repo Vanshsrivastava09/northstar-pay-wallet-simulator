@@ -4,7 +4,7 @@ import os
 class Settings:
     """Application settings loaded from environment variables."""
 
-    app_name = "Payment Gateway Simulator"
+    app_name = "Star Pay"
     secret_key = os.getenv("SECRET_KEY", "development-only-change-me-before-production")
     algorithm = "HS256"
     access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))

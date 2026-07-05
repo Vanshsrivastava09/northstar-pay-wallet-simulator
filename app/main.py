@@ -17,7 +17,7 @@ Base.metadata.create_all(bind=engine)
 ensure_user_verification_columns()
 
 app = FastAPI(
-    title="Payment Gateway Simulator",
+    title="Star Pay",
     version="1.0.0",
     description="A JWT-protected payment gateway simulator with wallets and transfers.",
 )

@@ -14,7 +14,7 @@ def send_otp_email(recipient: str, otp: str) -> None:
         raise EmailDeliveryError("Email delivery is not configured. Set GMAIL_ADDRESS and GMAIL_APP_PASSWORD.")
 
     message = EmailMessage()
-    message["Subject"] = "Your Northstar Pay verification code"
+    message["Subject"] = "Your Star Pay verification code"
     message["From"] = settings.smtp_from_email
     message["To"] = recipient
     message.set_content(
@@ -38,7 +38,7 @@ def send_password_reset_otp(recipient: str, otp: str) -> None:
         raise EmailDeliveryError("Email delivery is not configured. Set GMAIL_ADDRESS and GMAIL_APP_PASSWORD.")
 
     message = EmailMessage()
-    message["Subject"] = "Your Northstar Pay password reset code"
+    message["Subject"] = "Your Star Pay password reset code"
     message["From"] = settings.smtp_from_email
     message["To"] = recipient
     message.set_content(
