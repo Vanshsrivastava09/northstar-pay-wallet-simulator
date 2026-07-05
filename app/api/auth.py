@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -8,7 +9,14 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.email import EmailDeliveryError, send_otp_email, send_password_reset_otp
-from app.core.security import create_access_token, create_refresh_token, hash_password, hash_token, verify_password
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    hash_token,
+    validate_password,
+    verify_password,
+)
 from app.dependencies import CurrentUser, DbSession
 from app.models import RefreshToken, RevokedAccessToken, User, Wallet, utc_now
 from app.schemas.auth import (
@@ -24,6 +32,7 @@ from app.schemas.auth import (
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+logger = logging.getLogger(__name__)
 
 
 def generate_otp() -> str:
@@ -60,14 +69,6 @@ def issue_password_reset_otp(user: User, db: DbSession) -> str:
             return otp
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     return otp
-
-
-def validate_password_length(password: str) -> None:
-    if len(password.encode("utf-8")) > 72:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must not exceed 72 characters.",
-        )
 
 
 def create_token_pair(user: User, db: DbSession, response: Response) -> TokenResponse:
@@ -137,7 +138,14 @@ def get_profile(current_user: CurrentUser):
 
 @router.post("/signup", response_model=OtpDispatchResponse, status_code=status.HTTP_201_CREATED)
 def signup(payload: SignupRequest, db: DbSession):
-    validate_password_length(payload.password)
+    logger.info(
+        "Signup request: email=%s full_name=%s password_chars=%d password_bytes=%d",
+        payload.email,
+        bool(payload.full_name),
+        len(payload.password),
+        len(payload.password.encode("utf-8")),
+    )
+    validate_password(payload.password)
     existing = db.scalar(select(User).where(User.email == payload.email))
     if existing:
         if existing.is_verified:
@@ -224,6 +232,13 @@ def forgot_password(payload: ForgotPasswordRequest, db: DbSession):
 
 @router.post("/reset-password", response_model=OtpDispatchResponse)
 def reset_password(payload: ResetPasswordRequest, db: DbSession):
+    logger.info(
+        "Reset password request: email=%s new_password_chars=%d new_password_bytes=%d",
+        payload.email,
+        len(payload.new_password),
+        len(payload.new_password.encode("utf-8")),
+    )
+    validate_password(payload.new_password)
     user = db.scalar(select(User).where(User.email == payload.email))
     if not user or not user.is_verified:
         raise HTTPException(status_code=400, detail="The reset code or email address is invalid")
@@ -250,6 +265,12 @@ def reset_password(payload: ResetPasswordRequest, db: DbSession):
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: DbSession, response: Response):
+    logger.info(
+        "Login request: email=%s password_chars=%d password_bytes=%d",
+        payload.email,
+        len(payload.password),
+        len(payload.password.encode("utf-8")),
+    )
     user = db.scalar(select(User).where(User.email == payload.email))
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")

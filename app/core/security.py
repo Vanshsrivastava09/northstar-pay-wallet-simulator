@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import jwt
+from fastapi import HTTPException, status
 from passlib.context import CryptContext
 
 from app.core.config import settings
@@ -9,12 +10,37 @@ from app.core.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def validate_password(password: str) -> None:
+    if not isinstance(password, str):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be a string.")
+    if len(password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 8 characters long.")
+    if len(password) > 128:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must not exceed 128 characters.")
+    if len(password.encode("utf-8")) > 72:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must not exceed 72 bytes when encoded as UTF-8.",
+        )
+
+
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    validate_password(password)
+    try:
+        return pwd_context.hash(password)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    if not isinstance(plain_password, str):
+        return False
+    if len(plain_password.encode("utf-8")) > 72:
+        return False
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except (ValueError, TypeError):
+        return False
 
 
 def create_access_token(subject: str) -> str:
