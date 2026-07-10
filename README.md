@@ -8,10 +8,9 @@ The project simulates how modern fintech applications handle user onboarding, wa
 
 # 📸 Demo
 
-🎥 Demo Video: [[Video]](https://drive.google.com/file/d/1wOItP8s9pmc1Al2O82CJYt-hLfA7hQsx/view?usp=sharing)
+Deployed Link : https://star-pay.vercel.app/
 
-💻 GitHub Repository:
-https://github.com/Vanshsrivastava09/northstar-pay-wallet-simulator
+Demo Video:     [[Demo Video]](https://drive.google.com/file/d/1wOItP8s9pmc1Al2O82CJYt-hLfA7hQsx/view?usp=sharing)
 
 ---
 
